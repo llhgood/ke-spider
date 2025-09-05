@@ -33,11 +33,11 @@ jobs:
           echo "# 安全提示：不要将真实cookies提交到版本控制" >> cookies.txt
         fi
         
-        if [ ! -f '0903 测试 房源.xlsx' ]; then
+        if [ ! -f '房源.xlsx' ]; then
           python -c "
           import pandas as pd
           df = pd.DataFrame({'楼盘名称': ['恒大御景湾', '测试小区1', '测试小区2']})
-          df.to_excel('0903 测试 房源.xlsx', index=False)
+          df.to_excel('房源.xlsx', index=False)
           print('已创建测试Excel文件')
           "
         fi
@@ -47,13 +47,13 @@ jobs:
         # 使用PyInstaller打包，替换your_script_name.py为您的实际文件名
         pyinstaller --onefile --name ke-spider-macos \
           --add-data "cookies.txt:." \
-          --add-data "0903 测试 房源.xlsx:." \
+          --add-data "房源.xlsx:." \
           --hidden-import=pandas._libs.tslibs.timedeltas \
           --hidden-import=pandas._libs.tslibs.nattype \
           --hidden-import=pandas._libs.tslibs.base \
           --hidden-import=curl_cffi \
           --hidden-import=bs4 \
-          your_script_name.py
+          get_data.py
 
     - name: Create output directory with all required files
       run: |
@@ -61,14 +61,14 @@ jobs:
         mkdir -p dist-package
         cp dist/ke-spider-macos dist-package/
         cp cookies.txt dist-package/
-        cp '0903 测试 房源.xlsx' dist-package/
+        cp '房源.xlsx' dist-package/
         
         # 创建使用说明文件
         echo "# 使用说明" > dist-package/README.txt
         echo "1. 确保以下文件在同一目录：" >> dist-package/README.txt
         echo "   - ke-spider-macos (可执行文件)" >> dist-package/README.txt
         echo "   - cookies.txt (需要替换为真实的cookies)" >> dist-package/README.txt
-        echo "   - 0903 测试 房源.xlsx (数据文件)" >> dist-package/README.txt
+        echo "   - 房源.xlsx (数据文件)" >> dist-package/README.txt
         echo "2. 给可执行文件添加运行权限: chmod +x ke-spider-macos" >> dist-package/README.txt
         echo "3. 运行: ./ke-spider-macos" >> dist-package/README.txt
 
