@@ -15,9 +15,9 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.9'
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
@@ -25,24 +25,20 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller pandas openpyxl
 
-    - name: Create cookies.txt (placeholder)
+    - name: Create placeholder files for build
       run: |
-        # 这里需要您手动处理cookies
-        # 方法1: 将真实的cookies.txt内容设置为secret，然后在这里写入
-        # 方法2: 在运行前手动准备好cookies.txt文件并提交到仓库
+        # 创建必要的占位文件用于构建
         if [ ! -f cookies.txt ]; then
-          echo "请确保cookies.txt文件存在" > cookies.txt
-          echo "您需要将真实的cookies内容放入此文件" >> cookies.txt
+          echo "# 请在使用前替换为真实的cookies内容" > cookies.txt
+          echo "# 安全提示：不要将真实cookies提交到版本控制" >> cookies.txt
         fi
-
-    - name: Create test Excel file (placeholder)
-      run: |
-        # 创建测试用的Excel文件，您应该使用真实的数据文件
+        
         if [ ! -f '0903 测试 房源.xlsx' ]; then
           python -c "
           import pandas as pd
           df = pd.DataFrame({'楼盘名称': ['恒大御景湾', '测试小区1', '测试小区2']})
           df.to_excel('0903 测试 房源.xlsx', index=False)
+          print('已创建测试Excel文件')
           "
         fi
 
@@ -59,25 +55,33 @@ jobs:
           --hidden-import=bs4 \
           your_script_name.py
 
-    - name: Test the executable
+    - name: Create output directory with all required files
       run: |
-        # 测试生成的可执行文件是否能运行
-        ./dist/ke-spider-macos --help || echo "可执行文件测试运行（可能需要实际参数）"
+        # 创建包含所有必需文件的输出目录
+        mkdir -p dist-package
+        cp dist/ke-spider-macos dist-package/
+        cp cookies.txt dist-package/
+        cp '0903 测试 房源.xlsx' dist-package/
+        
+        # 创建使用说明文件
+        echo "# 使用说明" > dist-package/README.txt
+        echo "1. 确保以下文件在同一目录：" >> dist-package/README.txt
+        echo "   - ke-spider-macos (可执行文件)" >> dist-package/README.txt
+        echo "   - cookies.txt (需要替换为真实的cookies)" >> dist-package/README.txt
+        echo "   - 0903 测试 房源.xlsx (数据文件)" >> dist-package/README.txt
+        echo "2. 给可执行文件添加运行权限: chmod +x ke-spider-macos" >> dist-package/README.txt
+        echo "3. 运行: ./ke-spider-macos" >> dist-package/README.txt
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
+    - name: Upload artifact using v4
+      uses: actions/upload-artifact@v4
       with:
-        name: ke-spider-macos-executable
-        path: |
-          dist/ke-spider-macos
-          cookies.txt
-          0903 测试 房源.xlsx
+        name: ke-spider-macos-package
+        path: dist-package/
         if-no-files-found: error
+        retention-days: 7
 
-    - name: Show workflow info
+    - name: Show success message
       run: |
-        echo "构建完成！请在Artifacts中下载 ke-spider-macos-executable"
-        echo "下载后，请确保以下文件在同一目录："
-        echo "1. ke-spider-macos (可执行文件)"
-        echo "2. cookies.txt (需要替换为真实的cookies文件)"
-        echo "3. 0903 测试 房源.xlsx (您的数据文件)"
+        echo "✅ 构建成功完成！"
+        echo "📦 请在Artifacts中下载 ke-spider-macos-package"
+        echo "🔧 下载后请参考README.txt文件中的使用说明"
