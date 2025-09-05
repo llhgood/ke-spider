@@ -62,7 +62,7 @@ if __name__ == '__main__':
         'sec-ch-ua-platform': '"Windows"',
         'Cookie': f'{cookies}',
     }
-    df=pd.read_excel('0903 测试 房源.xlsx')
+    df=pd.read_excel('房源.xlsx')
     lf_name=df['楼盘名称'].tolist()
     for name in lf_name:
         print(name)
