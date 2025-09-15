@@ -2,21 +2,29 @@ import random
 import time
 import os
 import sys
+from pathlib import Path
 import pandas as pd
 from curl_cffi import requests
 import urllib.parse
 from bs4 import BeautifulSoup
 
 
-def get_resource_path(relative_path):
-    """获取资源的绝对路径，兼容开发环境和打包后环境"""
-    try:
-        # PyInstaller创建临时文件夹，存储在_MEIPASS中
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.dirname(os.path.abspath(__file__))
+def get_local_path(filename: str) -> str:
+    """始终从当前目录/可执行文件目录/源码目录查找外置文件，不使用 _MEIPASS。"""
+    candidates = []
+    # 1) 当前工作目录
+    candidates.append(Path.cwd() / filename)
+    # 2) 可执行文件所在目录（PyInstaller 打包后）
+    if getattr(sys, "frozen", False):
+        candidates.append(Path(sys.executable).resolve().parent / filename)
+    # 3) 源码文件所在目录（开发运行）
+    candidates.append(Path(__file__).resolve().parent / filename)
 
-    return os.path.join(base_path, relative_path)
+    for p in candidates:
+        if p.exists():
+            return str(p)
+    # 找不到则返回当前目录的目标路径，后续 open 会抛 FileNotFoundError
+    return str(Path.cwd() / filename)
 
 
 def get_detail(url, cookies):
@@ -58,7 +66,7 @@ def get_detail(url, cookies):
 if __name__ == '__main__':
     # 使用正确的路径获取文件
     try:
-        cookies_path = get_resource_path('cookies.txt')
+        cookies_path = get_local_path('cookies.txt')
         print(f"正在读取cookies文件: {cookies_path}")
 
         with open(cookies_path, encoding='utf8') as f:
@@ -67,7 +75,7 @@ if __name__ == '__main__':
 
     except FileNotFoundError:
         print("错误: 找不到cookies.txt文件")
-        print("请确保cookies.txt与可执行文件在同一目录下")
+        print("请确保cookies.txt与可执行文件或当前运行目录在同一目录下")
         print("当前目录文件列表:", os.listdir('.'))
         sys.exit(1)
 
@@ -93,7 +101,7 @@ if __name__ == '__main__':
 
     # 使用正确的路径获取Excel文件
     try:
-        excel_path = get_resource_path('房源.xlsx')
+        excel_path = get_local_path('房源.xlsx')
         print(f"正在读取Excel文件: {excel_path}")
         df = pd.read_excel(excel_path)
         lf_name = df['楼盘名称'].tolist()
@@ -101,7 +109,7 @@ if __name__ == '__main__':
 
     except FileNotFoundError:
         print("错误: 找不到房源.xlsx文件")
-        print("请确保房源.xlsx与可执行文件在同一目录下")
+        print("请确保房源.xlsx与可执行文件或当前运行目录在同一目录下")
         sys.exit(1)
 
     for name in lf_name:
